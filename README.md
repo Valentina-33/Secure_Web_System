@@ -77,7 +77,7 @@ npm run dev
 1. **Servidor:** Ubuntu con un usuario de despliegue que no sea root, firewall activo y solo los puertos TCP 80 y 443 abiertos.
 2. **Duck DNS:** el subdominio apunta a la IP pública del servidor.
 3. **Paquetes:** `sudo apt install -y apache2 certbot python3-certbot-apache openjdk-21-jre`.
-4. **Backend:** el JAR va en `/opt/enterprise-risk-api/app.jar` y corre con el usuario de sistema `riskapi` mediante `deploy/enterprise-risk-api.service`.
+4. **Backend:** el JAR va en `/opt/enterprise-risk-api/app.jar` y corre con el usuario de sistema `riskapi` mediante `deploy/enterprise-risk-api.service`, que lo hace escuchar solo en `127.0.0.1:8080` (`SERVER_ADDRESS=127.0.0.1`).
 5. **Frontend:** `dist/` se copia a `/var/www/enterprise-risk-frontend`, compilado con `VITE_API_URL=https://YOUR-SUBDOMAIN.duckdns.org`.
 6. **Apache y TLS:** se activa `deploy/enterprise-risk.conf` con `a2enmod ssl proxy proxy_http rewrite headers` y luego se ejecuta `sudo certbot --apache -d YOUR-SUBDOMAIN.duckdns.org`.
 7. **Renovación:** `sudo certbot renew --dry-run` termina sin errores.
