@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=riskapi
 WorkingDirectory=/opt/enterprise-risk-api
-Environment="SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=https://YOUR_TENANT.us.auth0.com/"
+Environment="SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=https://dev-074dm7vm0ps8dd8l.us.auth0.com/"
 Environment="SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES=https://enterprise-risk-api"
 Environment="SERVER_ADDRESS=127.0.0.1"
 ExecStart=/usr/bin/java -jar /opt/enterprise-risk-api/app.jar
