@@ -1,21 +1,21 @@
 # Frontend
 
-App en React (hecha con Vite) que inicia sesión con Auth0 y llama a la API protegida.
+React app (built with Vite) that logs you in with Auth0 and calls the protected API.
 
-## Cómo correrla
+## How to run it
 
-1. Copia `.env.example` como `.env.local` y pon el Domain y el Client ID de tu aplicación en Auth0.
-2. Instala las dependencias y arranca el servidor de desarrollo:
+1. Copy `.env.example` to `.env.local` and fill in the Domain and Client ID of your Auth0 app.
+2. Install the dependencies and start the dev server:
 
 ```bash
 npm install
 npm run dev
 ```
 
-3. Abre `http://localhost:5173`.
+3. Open `http://localhost:5173`.
 
-Para el build de producción, crea `.env.production.local` con `VITE_API_URL=https://paula-risk.duckdns.org` y corre `npm run build`. El resultado queda en `dist/`.
+For the production build, create `.env.production.local` with `VITE_API_URL=https://paula-risk.duckdns.org` and run `npm run build`. The output goes to `dist/`.
 
-Los archivos `.env.local` y `.env.production.local` no se suben al repositorio.
+The `.env.local` and `.env.production.local` files are never pushed to the repo.
 
-Más detalles en el [README principal](../README.md).
+More details in the [main README](../README.md).

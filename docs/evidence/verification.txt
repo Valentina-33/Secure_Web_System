@@ -1,19 +1,19 @@
-# Verificacion (Parte 7) de https://paula-risk.duckdns.org
-# Generado: 2026-10-20 02:22 UTC
+# Part 7 checks for https://paula-risk.duckdns.org
+# Generated: 2026-10-20 02:22 UTC
 
-## Desde internet
-$ curl -s -o /dev/null -w '%{http_code}' https://paula-risk.duckdns.org/api/risk-status   # sin token
+## From the internet
+$ curl -s -o /dev/null -w '%{http_code}' https://paula-risk.duckdns.org/api/risk-status   # no token
 401
-$ curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer x.y.z' https://paula-risk.duckdns.org/api/risk-status   # token invalido
+$ curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer x.y.z' https://paula-risk.duckdns.org/api/risk-status   # fake token
 401
-$ curl -s -o /dev/null -w '%{http_code} -> %{redirect_url}' http://paula-risk.duckdns.org/   # HTTP redirige a HTTPS
+$ curl -s -o /dev/null -w '%{http_code} -> %{redirect_url}' http://paula-risk.duckdns.org/   # HTTP redirects to HTTPS
 301 -> https://paula-risk.duckdns.org/
 $ curl -s -o /dev/null -w '%{http_code}' https://paula-risk.duckdns.org/
 200
-$ curl -m 6 http://paula-risk.duckdns.org:8080/actuator/health   # puerto 8080 desde internet
+$ curl -m 6 http://paula-risk.duckdns.org:8080/actuator/health   # port 8080 from the internet
 curl: (28) Connection timed out after 6002 milliseconds
 
-## En el servidor
+## On the server
 $ curl http://127.0.0.1:8080/actuator/health
 {"status":"UP"}
 $ sudo ss -tlnp | grep -E ':(80|443|8080) '

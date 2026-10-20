@@ -1,5 +1,5 @@
-# Certificado TLS de https://paula-risk.duckdns.org
-# Generado: 2026-10-20 02:20 UTC
+# TLS certificate for https://paula-risk.duckdns.org
+# Generated: 2026-10-20 02:20 UTC
 
 $ echo | openssl s_client -connect paula-risk.duckdns.org:443 -servername paula-risk.duckdns.org | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
 subject=CN=paula-risk.duckdns.org
@@ -18,7 +18,7 @@ Verify return code: 0 (ok)
 $ curl -sS -o /dev/null -w 'HTTP %{http_code} | ssl_verify_result=%{ssl_verify_result}\n' https://paula-risk.duckdns.org/
 HTTP 200 | ssl_verify_result=0
 
-# Servidor: sudo certbot certificates
+# On the server: sudo certbot certificates
   Certificate Name: paula-risk.duckdns.org
     Serial Number: 662f328d1c418807482ef7e937a54ba00b3
     Key Type: ECDSA
@@ -27,7 +27,7 @@ HTTP 200 | ssl_verify_result=0
     Certificate Path: /etc/letsencrypt/live/paula-risk.duckdns.org/fullchain.pem
     Private Key Path: /etc/letsencrypt/live/paula-risk.duckdns.org/privkey.pem
 
-# Servidor: sudo certbot renew --dry-run
+# On the server: sudo certbot renew --dry-run
 Simulating renewal of an existing certificate for paula-risk.duckdns.org
 Congratulations, all simulated renewals succeeded: 
   /etc/letsencrypt/live/paula-risk.duckdns.org/fullchain.pem (success)

@@ -39,7 +39,7 @@ dist/
 *.local
 
 ### Evidence with secrets ###
-*NO-SUBIR*
+*DO-NOT-COMMIT*
 
 ### IntelliJ IDEA (local) ###
 .idea/
