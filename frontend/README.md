@@ -1,16 +1,21 @@
-# React + Vite
+# Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+App en React (hecha con Vite) que inicia sesión con Auth0 y llama a la API protegida.
 
-Currently, two official plugins are available:
+## Cómo correrla
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Copia `.env.example` como `.env.local` y pon el Domain y el Client ID de tu aplicación en Auth0.
+2. Instala las dependencias y arranca el servidor de desarrollo:
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+3. Abre `http://localhost:5173`.
 
-## Expanding the Oxlint configuration
+Para el build de producción, crea `.env.production.local` con `VITE_API_URL=https://paula-risk.duckdns.org` y corre `npm run build`. El resultado queda en `dist/`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Los archivos `.env.local` y `.env.production.local` no se suben al repositorio.
+
+Más detalles en el [README principal](../README.md).

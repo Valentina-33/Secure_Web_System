@@ -1,50 +1,47 @@
 # Secure Web System as an Enterprise Risk Control
 
-Sistema web pequeño que se protege con controles de riesgo empresarial:
+Este proyecto es un sistema web pequeño hecho para practicar controles de seguridad. Tiene tres partes:
 
-- **Frontend React** (Vite) con autenticación de usuarios mediante **Auth0**.
-- **Backend Spring Boot** protegido como **OAuth 2.0 Resource Server**: valida el JWT emitido por Auth0, su emisor (`issuer`) y su audiencia (`audience`).
-- **Despliegue público por HTTPS** con **Duck DNS**, **Apache HTTP Server** como proxy inverso y un certificado **Let's Encrypt**.
+- Un **frontend en React** (hecho con Vite) donde la persona inicia sesión con **Auth0**.
+- Un **backend en Spring Boot** que funciona como **OAuth 2.0 Resource Server**. Solo responde si la petición trae un token JWT válido de Auth0, y revisa quién lo emitió (`issuer`) y para qué API es (`audience`).
+- Un **despliegue público con HTTPS**, usando **Duck DNS** para el dominio, **Apache** como proxy inverso y un certificado gratuito de **Let's Encrypt**.
 
-## URL desplegada
+## Dónde está desplegado
 
 **https://paula-risk.duckdns.org**
 
-## Arquitectura
+## Cómo funciona
 
-```
-Browser
-  │ login and access token
-  ▼
-Auth0 ───────────────► React frontend ── Bearer token ──► Spring Boot API
-                                                        │
-Internet ── Duck DNS ── Apache + TLS ──────────────────┘
-```
+1. La persona entra al frontend y le da clic a **Log in**.
+2. Auth0 le pide su correo y contraseña. Si son correctos, le entrega al navegador un access token para la API `https://enterprise-risk-api`.
+3. Cuando la persona le da clic a **Call protected API**, el frontend llama a `GET /api/risk-status` y manda el token en la cabecera `Authorization: Bearer <token>`.
+4. El backend revisa el token. Si es válido, responde con un JSON. Si no hay token o no sirve, responde `401`.
+5. En el servidor, todo entra por Apache en los puertos 80 y 443. Apache entrega el frontend y le pasa las peticiones de `/api/` al backend, que solo escucha dentro del servidor en `127.0.0.1:8080`. Así el puerto 8080 nunca queda abierto a internet.
 
-El navegador inicia sesión en Auth0 y obtiene un access token con audiencia `https://enterprise-risk-api`. El frontend envía ese token en la cabecera `Authorization: Bearer <token>` a `GET /api/risk-status`. En producción, Apache sirve el frontend y reenvía `/api/` a `127.0.0.1:8080`, de modo que el puerto 8080 nunca queda expuesto a internet.
+## Qué hay en el repositorio
 
-## Estructura del repositorio
+| Carpeta o archivo | Qué contiene |
+|---|---|
+| `backend/` | La API en Spring Boot con Java 21 y Maven. Ahí están `SecurityConfig`, `RiskController` y `application.properties` |
+| `frontend/` | La app en React con `@auth0/auth0-react` |
+| `deploy/enterprise-risk-api.service` | El servicio de systemd que deja corriendo el backend en el servidor (Parte 5) |
+| `deploy/enterprise-risk.conf` | La configuración del sitio en Apache (Parte 6) |
+| `docs/evidence/` | Las capturas y las salidas de comandos que sirven de evidencia |
 
-| Ruta | Contenido |
-|------|-----------|
-| `backend/` | API Spring Boot (Java 21, Maven): `SecurityConfig`, `RiskController` y `application.properties` |
-| `frontend/` | Cliente React (Vite) con `@auth0/auth0-react` |
-| `deploy/enterprise-risk-api.service` | Unidad systemd del backend (Parte 5) |
-| `deploy/enterprise-risk.conf` | Virtual host de Apache (Parte 6) |
-| `docs/evidence/` | Capturas de evidencia |
+## Configuración en Auth0
 
-## Configuración de Auth0
-
-| Elemento | Valor |
-|----------|-------|
+| Qué | Valor |
+|---|---|
 | API | `Enterprise Risk Lab API` |
 | Identifier (audience) | `https://enterprise-risk-api` |
-| Signing algorithm | `RS256` |
-| Permission | `read:risk`: Read the protected risk status |
-| SPA | `Enterprise Risk Lab Frontend` con **User-Delegated Access** a `read:risk` |
-| Callback / Logout URLs / Web Origins | `http://localhost:5173,https://paula-risk.duckdns.org` |
+| Algoritmo de firma | `RS256` |
+| Permiso | `read:risk`, que sirve para leer el estado de riesgo protegido |
+| Aplicación del navegador (SPA) | `Enterprise Risk Lab Frontend`, con **User-Delegated Access** a `read:risk` |
+| Callback URLs, Logout URLs y Web Origins | `http://localhost:5173,https://paula-risk.duckdns.org` |
 
-## Ejecución local
+La SPA necesita **User-Delegated Access** porque actúa en nombre de la persona que inició sesión. El acceso tipo *Client Access* es para comunicación entre máquinas y no sirve para un login desde el navegador.
+
+## Cómo correrlo en local
 
 **Backend**
 
@@ -53,11 +50,11 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-`http://localhost:8080/api/risk-status` responde `401 Unauthorized` sin token, como se espera.
+Si abres `http://localhost:8080/api/risk-status` sin token, responde `401 Unauthorized`. Eso es lo esperado.
 
 **Frontend**
 
-Crea `frontend/.env.local` a partir de `frontend/.env.example`. Ese archivo no se versiona.
+Copia `frontend/.env.example` como `frontend/.env.local` y llénalo con el Domain y el Client ID de la aplicación en Auth0. Este archivo no se sube al repositorio.
 
 ```
 VITE_AUTH0_DOMAIN=YOUR_TENANT.us.auth0.com
@@ -72,63 +69,73 @@ npm install
 npm run dev
 ```
 
-## Despliegue
+Luego abres `http://localhost:5173`, inicias sesión y le das clic a **Call protected API**.
 
-1. **Servidor:** Ubuntu con un usuario de despliegue que no sea root, firewall activo y solo los puertos TCP 80 y 443 abiertos.
-2. **Duck DNS:** el subdominio apunta a la IP pública del servidor.
-3. **Paquetes:** `sudo apt install -y apache2 certbot python3-certbot-apache openjdk-21-jre`.
-4. **Backend:** el JAR va en `/opt/enterprise-risk-api/app.jar` y corre con el usuario de sistema `riskapi` mediante `deploy/enterprise-risk-api.service`, que lo hace escuchar solo en `127.0.0.1:8080` (`SERVER_ADDRESS=127.0.0.1`).
-5. **Frontend:** `dist/` se copia a `/var/www/enterprise-risk-frontend`, compilado con `VITE_API_URL=https://paula-risk.duckdns.org`.
-6. **Apache y TLS:** se activa `deploy/enterprise-risk.conf` con `a2enmod ssl proxy proxy_http rewrite headers` y luego se ejecuta `sudo certbot --apache -d paula-risk.duckdns.org`. Certbot crea `enterprise-risk-le-ssl.conf` para el puerto 443 y agrega la redirección HTTP → HTTPS al VirtualHost del puerto 80. En ese VirtualHost hubo que añadir `RewriteEngine On` a nivel de VirtualHost: sin esa línea, la redirección no se aplicaba, porque el motor de rewrite solo estaba activo dentro de `<Directory>`.
-7. **Renovación:** `sudo certbot renew --dry-run` termina sin errores.
+## Cómo se desplegó
+
+1. **Servidor:** una instancia EC2 de AWS con Ubuntu y una Elastic IP (`98.82.207.254`). Se creó el usuario `deploy`, que no es root, y se activó el firewall `ufw`. Desde internet solo se puede entrar por los puertos 80 y 443 para la web, y por el 22 para administrar el servidor por SSH. El 8080 no está abierto.
+2. **Duck DNS:** el subdominio `paula-risk.duckdns.org` apunta a la Elastic IP.
+3. **Paquetes:** se instalaron con `sudo apt install -y apache2 certbot python3-certbot-apache openjdk-21-jre`.
+4. **Compilación:** el frontend y el backend se compilaron en mi computador con `npm run build` y `./mvnw clean package`, y se copiaron al servidor con `scp`. Para el build de producción se usó `VITE_API_URL=https://paula-risk.duckdns.org`.
+5. **Backend:** el JAR quedó en `/opt/enterprise-risk-api/app.jar` y corre con el usuario de sistema `riskapi` usando `deploy/enterprise-risk-api.service`. A ese servicio le agregué `SERVER_ADDRESS=127.0.0.1` para que escuche solo dentro del servidor. Sin esa línea, Spring Boot escucha en todas las interfaces y el puerto 8080 solo quedaría protegido por el firewall.
+6. **Frontend:** el contenido de `dist/` quedó en `/var/www/enterprise-risk-frontend`.
+7. **Apache:** se activaron los módulos con `sudo a2enmod ssl proxy proxy_http rewrite headers`, se habilitó el sitio `deploy/enterprise-risk.conf` y se deshabilitó el sitio por defecto.
+8. **HTTPS:** el certificado se sacó con `sudo certbot --apache -d paula-risk.duckdns.org`. Certbot creó la configuración del puerto 443 y agregó la redirección de HTTP a HTTPS. Esa redirección no funcionaba porque `RewriteEngine On` solo estaba dentro del bloque `<Directory>`, así que se agregó también a nivel del VirtualHost del puerto 80.
+9. **Renovación:** `sudo certbot renew --dry-run` terminó sin errores. Certbot deja programada la renovación automática.
+10. **Auth0:** se agregó `https://paula-risk.duckdns.org` en Callback URLs, Logout URLs y Web Origins.
 
 ## Evidencias
 
+Las evidencias que pide el taller:
+
 | Entregable | Archivo |
 |---|---|
-| Llamada autenticada exitosa a la API desplegada | [`docs/evidence/authenticated-api-call.png`](docs/evidence/authenticated-api-call.png) |
-| Certificado válido (salida de comandos) | [`docs/evidence/certificate.png`](docs/evidence/certificate.png) · [`certificate.txt`](docs/evidence/certificate.txt) |
-| Verificación de la Parte 7 (salida de comandos) | [`docs/evidence/verification.png`](docs/evidence/verification.png) · [`verification.txt`](docs/evidence/verification.txt) |
+| Llamada exitosa a la API con sesión iniciada, en el sitio desplegado | [authenticated-api-call.png](docs/evidence/authenticated-api-call.png) |
+| Certificado válido (salida de `openssl` y `certbot`) | [certificate.png](docs/evidence/certificate.png) y [certificate.txt](docs/evidence/certificate.txt) |
+| Revisión de la Parte 7 (salida de los comandos) | [verification.png](docs/evidence/verification.png) y [verification.txt](docs/evidence/verification.txt) |
 
-Capturas del proceso, en orden:
+Capturas de cada paso, en orden:
 
-| # | Paso |
+| Capturas | Qué muestran |
 |---|---|
-| 01–02 | Login de Auth0 con el usuario de prueba |
-| 03–04 | Flujo local: sesión iniciada y llamada autenticada desde `localhost:5173` |
-| 05–06 | Instancia EC2 y Elastic IP |
-| 07–09 | Subdominio de Duck DNS apuntando a la Elastic IP y resolución con `nslookup` |
-| 10–14 | Acceso SSH, instalación de paquetes, usuario `deploy` y firewall `ufw` |
-| 15 | Copia de los artefactos al servidor con `scp` |
-| 16 | URLs de producción en Auth0 (Callback, Logout y Web Origins) |
-| 17 | Aplicación servida en `https://paula-risk.duckdns.org` |
+| 01 y 02 | La pantalla de login de Auth0 y el inicio de sesión con el usuario de prueba |
+| 03 y 04 | La prueba en local: sesión iniciada y llamada a la API desde `localhost:5173` |
+| 05 y 06 | La Elastic IP asociada y la instancia EC2 corriendo |
+| 07, 08 y 09 | El subdominio creado en Duck DNS, su IP actualizada y la prueba con `nslookup` |
+| 10 a 14 | La conexión por SSH, la instalación de paquetes, el usuario `deploy` y el firewall |
+| 15 | La copia de los archivos al servidor con `scp` |
+| 16 | Las URLs de producción guardadas en Auth0 |
+| 17 | El sitio funcionando en `https://paula-risk.duckdns.org` |
 
 ## Lista de verificación
 
-- [x] Las peticiones sin autenticar a `/api/risk-status` devuelven 401.
-- [x] Un usuario autenticado puede llamar a `/api/risk-status` desde el frontend.
-- [x] El backend valida el emisor y la audiencia del JWT.
-- [x] La aplicación está disponible en `https://paula-risk.duckdns.org`.
-- [x] El navegador muestra un certificado válido y el candado de HTTPS.
-- [x] El puerto 8080 no es accesible desde internet.
-- [x] `sudo certbot renew --dry-run` termina sin errores.
+| Punto | Estado | Cómo se comprobó |
+|---|---|---|
+| Sin login, `/api/risk-status` responde 401 | Listo | `verification.txt`: responde 401 sin token y también con un token falso |
+| Con sesión iniciada se puede llamar a `/api/risk-status` desde el frontend | Listo | `authenticated-api-call.png` |
+| El backend revisa el issuer y la audiencia del JWT | Listo | `application.properties` y el servicio de systemd configuran los dos. Un token falso recibe 401 |
+| La app está en `https://paula-risk.duckdns.org` | Listo | `verification.txt`: responde 200 por HTTPS, y HTTP redirige a HTTPS con 301 |
+| El certificado es válido y el navegador muestra la conexión segura | Listo | `certificate.txt`: emitido por Let's Encrypt, `Verify return code: 0 (ok)`, vence el 18 de enero de 2027 |
+| El puerto 8080 no se puede usar desde internet | Listo | `verification.txt`: desde afuera se agota el tiempo de espera, y en el servidor escucha solo en `127.0.0.1` |
+| `sudo certbot renew --dry-run` funciona | Listo | `certificate.txt` |
 
-## Reflexión sobre controles de riesgo
+## Controles de riesgo
 
-| Control | Riesgo que reduce | Evidencia |
-|---------|-------------------|-----------|
-| Autenticación con Auth0 | Suplantación de identidad y manejo débil de credenciales | Flujo de login de Auth0 e identidad del usuario |
-| Validación del JWT en la API | Acceso no autorizado a la API | 401 sin un token válido |
-| Validación de audiencia | Reutilización de un token contra otra API | La API solo acepta su audiencia (`https://enterprise-risk-api`) |
-| HTTPS con certificado válido | Exposición de credenciales o tokens en tránsito | Detalles del certificado en el navegador |
-| Proxy inverso Apache | Exposición directa del puerto de la aplicación | Solo los puertos 80 y 443 son públicos |
-| Logs centralizados del servicio | Investigación tardía de incidentes | Salida de `journalctl -u enterprise-risk-api` |
+| Control | Qué riesgo baja | Evidencia |
+|---|---|---|
+| Login con Auth0 | Que alguien se haga pasar por otra persona o que las contraseñas se manejen mal | El login de Auth0 y el usuario que aparece en la app |
+| Validación del JWT en la API | Que alguien use la API sin permiso | Responde 401 si no hay un token válido |
+| Validación de la audiencia | Que un token hecho para otra API se use en esta | La API solo acepta tokens para `https://enterprise-risk-api` |
+| HTTPS con certificado válido | Que alguien vea contraseñas o tokens mientras viajan por la red | Los datos del certificado en `certificate.txt` |
+| Apache como proxy inverso | Que el puerto de la aplicación quede expuesto | Solo los puertos 80 y 443 están abiertos |
+| Logs del servicio | Tardar mucho en investigar un incidente | La salida de `journalctl -u enterprise-risk-api` en `verification.txt` |
 
-**Autenticación y autorización.** La autenticación responde a *quién es* el usuario; aquí la realiza Auth0 con el login. La autorización responde a *qué puede hacer*: el backend solo deja pasar a `/api/**` las peticiones que traen un access token válido, firmado por el tenant de Auth0 y emitido para la audiencia de esta API. Cualquier otra ruta se rechaza con `denyAll()`.
+**Diferencia entre autenticación y autorización.** La autenticación responde *quién eres*. Aquí la hace Auth0 cuando la persona inicia sesión. La autorización responde *qué puedes hacer*. Aquí la hace el backend: solo deja pasar a `/api/**` las peticiones con un token válido, firmado por el tenant de Auth0 y hecho para esta API. Cualquier otra ruta se bloquea con `denyAll()`, menos `/actuator/health`, que queda abierta para revisar que el servicio está vivo.
 
 ## Notas de seguridad
 
-- `.env.local`, las credenciales del servidor, los secretos de Auth0 y los tokens de Duck DNS nunca se suben al repositorio.
-- La SPA usa solo el Client ID de Auth0, nunca un client secret.
-- CORS está restringido a los orígenes exactos de desarrollo y producción, y solo permite `GET`.
-- Los access tokens no se muestran, no se registran en logs y no se guardan manualmente.
+- Nunca se suben al repositorio `.env.local`, las llaves del servidor, secretos de Auth0 ni el token de Duck DNS. La captura donde se veía el token de Duck DNS se dejó por fuera con `.gitignore`.
+- La SPA usa solo el Client ID de Auth0. Nunca usa el Client Secret.
+- CORS solo acepta `http://localhost:5173` y `https://paula-risk.duckdns.org`, y solo permite peticiones `GET`.
+- Los access tokens no se muestran en pantalla, no se escriben en los logs y no se guardan a mano.
+- El backend corre con un usuario de sistema sin privilegios (`riskapi`) y el despliegue se hace con un usuario que no es root.
