@@ -75,7 +75,7 @@ Then open `http://localhost:5173`, log in and click **Call protected API**.
 
 ## How it was deployed
 
-1. **Server:** an AWS EC2 instance with Ubuntu and an Elastic IP (`98.82.207.254`). We created a `deploy` user that isn't root and turned on the `ufw` firewall. From the internet you can only get in through ports 80 and 443 for the web, and port 22 to manage the server over SSH. Port 8080 isn't open.
+1. **Server:** an AWS EC2 instance with Ubuntu and an Elastic IP (`98.82.207.254`). We created a `deploy` user that isn't root and turned on the `ufw` firewall. In the AWS security group, ports 80 and 443 are open to everyone for the web, and port 22 (SSH) is only open to my own IP. Port 8080 isn't open.
 2. **Duck DNS:** the `paula-risk.duckdns.org` subdomain points to the Elastic IP.
 3. **Packages:** installed with `sudo apt install -y apache2 certbot python3-certbot-apache openjdk-21-jre`.
 4. **Build:** the frontend and backend were built on my computer with `npm run build` and `./mvnw clean package`, then copied to the server with `scp`. The production build uses `VITE_API_URL=https://paula-risk.duckdns.org`.
@@ -100,11 +100,21 @@ All the images are in `docs/evidence/`.
 
 ![Certificate check output](docs/evidence/certificate.png)
 
+The same certificate seen in Chrome's certificate viewer, opened from the icon next to the address bar. It's issued to `paula-risk.duckdns.org` by Let's Encrypt (YE1). The browser is set to Spanish, so the labels are in Spanish, and the dates are in Colombia time (UTC-5).
+
+![Certificate in the browser](docs/evidence/browser-certificate.png)
+
 **Part 7 checks.** Output of the commands used for the checklist: 401 without a token, 301 from HTTP to HTTPS, port 8080 closed from the internet, the backend listening only on `127.0.0.1`, the firewall rules, the services running and the service logs. The plain text version is in [verification.txt](docs/evidence/verification.txt).
 
 ![Part 7 checks output](docs/evidence/verification.png)
 
 ### Part 1: Auth0 setup
+
+The `Enterprise Risk Lab API` with its identifier `https://enterprise-risk-api` and the `read:risk` permission ("Read the protected risk status").
+
+![Auth0 API with the read:risk permission](docs/evidence/00c-auth0-api-permissions.png)
+
+The API was created with the RS256 signing algorithm. You can also tell from the backend: Spring Boot only accepts RS256 tokens by default (`spring.security.oauth2.resourceserver.jwt.jws-algorithms` defaults to `RS256`), and we didn't change that, so the successful API call means the token was signed with RS256.
 
 The SPA created in Auth0, with its Domain and Client ID. The Client Secret stays hidden and isn't used anywhere.
 
@@ -158,6 +168,10 @@ Creating the `deploy` user (not root) and turning on the firewall with only SSH,
 
 ![SSH into the server again](docs/evidence/14-ssh-server-again.png)
 
+The inbound rules of the instance's security group in AWS: 80 and 443 open to everyone, 22 only from my IP, and nothing for 8080.
+
+![Security group inbound rules](docs/evidence/14b-aws-security-group.png)
+
 ### Parts 5 and 6: deploying
 
 Copying the frontend build, the backend JAR and the config files to the server with `scp`. This is the first copy. The first frontend build still had the example values from `.env.production.local`, so after fixing them we rebuilt it and copied it again the same way. The old file was removed from the server.
@@ -180,8 +194,8 @@ The site running at `https://paula-risk.duckdns.org`, before logging in.
 | A logged in user can call `/api/risk-status` from the frontend | Done | `authenticated-api-call.png` |
 | The backend checks the JWT issuer and audience | Done | Both are set in `application.properties` and in the systemd service. A fake token gets 401 |
 | The app is live at `https://paula-risk.duckdns.org` | Done | `verification.txt`: it returns 200 over HTTPS, and HTTP redirects to HTTPS with 301 |
-| The certificate is valid and the browser shows a secure connection | Done | `certificate.txt`: issued by Let's Encrypt, `Verify return code: 0 (ok)`, expires on January 18, 2027 |
-| Port 8080 can't be reached from the internet | Done | `verification.txt`: from outside the request times out, and on the server it only listens on `127.0.0.1` |
+| The certificate is valid and the browser shows a secure connection | Done | `browser-certificate.png` shows it in Chrome. `certificate.txt`: issued by Let's Encrypt, `Verify return code: 0 (ok)`, expires on January 18, 2027 (UTC) |
+| Port 8080 can't be reached from the internet | Done | `14b-aws-security-group.png`: there's no rule for 8080. `verification.txt`: from outside the request times out, and on the server it only listens on `127.0.0.1` |
 | `sudo certbot renew --dry-run` works | Done | `certificate.txt` |
 
 ## Risk controls
@@ -191,8 +205,8 @@ The site running at `https://paula-risk.duckdns.org`, before logging in.
 | Auth0 login | Someone pretending to be someone else, or passwords being handled badly | The Auth0 login and the user shown in the app |
 | JWT check in the API | Someone using the API without permission | It returns 401 without a valid token |
 | Audience check | A token made for another API being used on this one | The API only accepts tokens for `https://enterprise-risk-api` |
-| HTTPS with a valid certificate | Someone seeing passwords or tokens while they travel over the network | The certificate details in `certificate.txt` |
-| Apache as a reverse proxy | The app's port being exposed | Only ports 80 and 443 are open |
+| HTTPS with a valid certificate | Someone seeing passwords or tokens while they travel over the network | The certificate in `browser-certificate.png` and `certificate.txt` |
+| Apache as a reverse proxy | The app's port being exposed | Only ports 80 and 443 are open to the public (`14b-aws-security-group.png`) |
 | Service logs | Taking too long to look into an incident | The `journalctl -u enterprise-risk-api` output in `verification.txt` |
 
 **Authentication vs. authorization.** Authentication answers *who you are*. Here Auth0 does it when you log in. Authorization answers *what you're allowed to do*. Here the backend does it: it only lets requests into `/api/**` if they have a valid token, signed by the Auth0 tenant and made for this API. Every other route is blocked with `denyAll()`, except `/actuator/health`, which stays open so you can check the service is up.
