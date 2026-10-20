@@ -31,7 +31,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "https://YOUR-SUBDOMAIN.duckdns.org"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "https://paula-risk.duckdns.org"));
         config.setAllowedMethods(List.of("GET"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

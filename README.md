@@ -8,7 +8,7 @@ Sistema web pequeño que se protege con controles de riesgo empresarial:
 
 ## URL desplegada
 
-**https://YOUR-SUBDOMAIN.duckdns.org**
+**https://paula-risk.duckdns.org**
 
 ## Arquitectura
 
@@ -42,7 +42,7 @@ El navegador inicia sesión en Auth0 y obtiene un access token con audiencia `ht
 | Signing algorithm | `RS256` |
 | Permission | `read:risk`: Read the protected risk status |
 | SPA | `Enterprise Risk Lab Frontend` con **User-Delegated Access** a `read:risk` |
-| Callback / Logout URLs / Web Origins | `http://localhost:5173,https://YOUR-SUBDOMAIN.duckdns.org` |
+| Callback / Logout URLs / Web Origins | `http://localhost:5173,https://paula-risk.duckdns.org` |
 
 ## Ejecución local
 
@@ -78,8 +78,8 @@ npm run dev
 2. **Duck DNS:** el subdominio apunta a la IP pública del servidor.
 3. **Paquetes:** `sudo apt install -y apache2 certbot python3-certbot-apache openjdk-21-jre`.
 4. **Backend:** el JAR va en `/opt/enterprise-risk-api/app.jar` y corre con el usuario de sistema `riskapi` mediante `deploy/enterprise-risk-api.service`, que lo hace escuchar solo en `127.0.0.1:8080` (`SERVER_ADDRESS=127.0.0.1`).
-5. **Frontend:** `dist/` se copia a `/var/www/enterprise-risk-frontend`, compilado con `VITE_API_URL=https://YOUR-SUBDOMAIN.duckdns.org`.
-6. **Apache y TLS:** se activa `deploy/enterprise-risk.conf` con `a2enmod ssl proxy proxy_http rewrite headers` y luego se ejecuta `sudo certbot --apache -d YOUR-SUBDOMAIN.duckdns.org`.
+5. **Frontend:** `dist/` se copia a `/var/www/enterprise-risk-frontend`, compilado con `VITE_API_URL=https://paula-risk.duckdns.org`.
+6. **Apache y TLS:** se activa `deploy/enterprise-risk.conf` con `a2enmod ssl proxy proxy_http rewrite headers` y luego se ejecuta `sudo certbot --apache -d paula-risk.duckdns.org`.
 7. **Renovación:** `sudo certbot renew --dry-run` termina sin errores.
 
 ## Evidencias
@@ -92,7 +92,7 @@ npm run dev
 - [ ] Las peticiones sin autenticar a `/api/risk-status` devuelven 401.
 - [ ] Un usuario autenticado puede llamar a `/api/risk-status` desde el frontend.
 - [ ] El backend valida el emisor y la audiencia del JWT.
-- [ ] La aplicación está disponible en `https://YOUR-SUBDOMAIN.duckdns.org`.
+- [ ] La aplicación está disponible en `https://paula-risk.duckdns.org`.
 - [ ] El navegador muestra un certificado válido y el candado de HTTPS.
 - [ ] El puerto 8080 no es accesible desde internet.
 - [ ] `sudo certbot renew --dry-run` termina sin errores.
