@@ -79,23 +79,39 @@ npm run dev
 3. **Paquetes:** `sudo apt install -y apache2 certbot python3-certbot-apache openjdk-21-jre`.
 4. **Backend:** el JAR va en `/opt/enterprise-risk-api/app.jar` y corre con el usuario de sistema `riskapi` mediante `deploy/enterprise-risk-api.service`, que lo hace escuchar solo en `127.0.0.1:8080` (`SERVER_ADDRESS=127.0.0.1`).
 5. **Frontend:** `dist/` se copia a `/var/www/enterprise-risk-frontend`, compilado con `VITE_API_URL=https://paula-risk.duckdns.org`.
-6. **Apache y TLS:** se activa `deploy/enterprise-risk.conf` con `a2enmod ssl proxy proxy_http rewrite headers` y luego se ejecuta `sudo certbot --apache -d paula-risk.duckdns.org`.
+6. **Apache y TLS:** se activa `deploy/enterprise-risk.conf` con `a2enmod ssl proxy proxy_http rewrite headers` y luego se ejecuta `sudo certbot --apache -d paula-risk.duckdns.org`. Certbot crea `enterprise-risk-le-ssl.conf` para el puerto 443 y agrega la redirección HTTP → HTTPS al VirtualHost del puerto 80. En ese VirtualHost hubo que añadir `RewriteEngine On` a nivel de VirtualHost: sin esa línea, la redirección no se aplicaba, porque el motor de rewrite solo estaba activo dentro de `<Directory>`.
 7. **Renovación:** `sudo certbot renew --dry-run` termina sin errores.
 
 ## Evidencias
 
-- Llamada autenticada exitosa a la API: `docs/evidence/authenticated-api-call.png`
-- Certificado válido: `docs/evidence/certificate.png`
+| Entregable | Archivo |
+|---|---|
+| Llamada autenticada exitosa a la API desplegada | [`docs/evidence/authenticated-api-call.png`](docs/evidence/authenticated-api-call.png) |
+| Certificado válido (salida de comandos) | [`docs/evidence/certificate.png`](docs/evidence/certificate.png) · [`certificate.txt`](docs/evidence/certificate.txt) |
+| Verificación de la Parte 7 (salida de comandos) | [`docs/evidence/verification.png`](docs/evidence/verification.png) · [`verification.txt`](docs/evidence/verification.txt) |
+
+Capturas del proceso, en orden:
+
+| # | Paso |
+|---|---|
+| 01–02 | Login de Auth0 con el usuario de prueba |
+| 03–04 | Flujo local: sesión iniciada y llamada autenticada desde `localhost:5173` |
+| 05–06 | Instancia EC2 y Elastic IP |
+| 07–09 | Subdominio de Duck DNS apuntando a la Elastic IP y resolución con `nslookup` |
+| 10–14 | Acceso SSH, instalación de paquetes, usuario `deploy` y firewall `ufw` |
+| 15 | Copia de los artefactos al servidor con `scp` |
+| 16 | URLs de producción en Auth0 (Callback, Logout y Web Origins) |
+| 17 | Aplicación servida en `https://paula-risk.duckdns.org` |
 
 ## Lista de verificación
 
-- [ ] Las peticiones sin autenticar a `/api/risk-status` devuelven 401.
-- [ ] Un usuario autenticado puede llamar a `/api/risk-status` desde el frontend.
-- [ ] El backend valida el emisor y la audiencia del JWT.
-- [ ] La aplicación está disponible en `https://paula-risk.duckdns.org`.
-- [ ] El navegador muestra un certificado válido y el candado de HTTPS.
-- [ ] El puerto 8080 no es accesible desde internet.
-- [ ] `sudo certbot renew --dry-run` termina sin errores.
+- [x] Las peticiones sin autenticar a `/api/risk-status` devuelven 401.
+- [x] Un usuario autenticado puede llamar a `/api/risk-status` desde el frontend.
+- [x] El backend valida el emisor y la audiencia del JWT.
+- [x] La aplicación está disponible en `https://paula-risk.duckdns.org`.
+- [x] El navegador muestra un certificado válido y el candado de HTTPS.
+- [x] El puerto 8080 no es accesible desde internet.
+- [x] `sudo certbot renew --dry-run` termina sin errores.
 
 ## Reflexión sobre controles de riesgo
 

@@ -1,0 +1,55 @@
+# Verificacion (Parte 7) de https://paula-risk.duckdns.org
+# Generado: 2026-10-20 02:22 UTC
+
+## Desde internet
+$ curl -s -o /dev/null -w '%{http_code}' https://paula-risk.duckdns.org/api/risk-status   # sin token
+401
+$ curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer x.y.z' https://paula-risk.duckdns.org/api/risk-status   # token invalido
+401
+$ curl -s -o /dev/null -w '%{http_code} -> %{redirect_url}' http://paula-risk.duckdns.org/   # HTTP redirige a HTTPS
+301 -> https://paula-risk.duckdns.org/
+$ curl -s -o /dev/null -w '%{http_code}' https://paula-risk.duckdns.org/
+200
+$ curl -m 6 http://paula-risk.duckdns.org:8080/actuator/health   # puerto 8080 desde internet
+curl: (28) Connection timed out after 6002 milliseconds
+
+## En el servidor
+$ curl http://127.0.0.1:8080/actuator/health
+{"status":"UP"}
+$ sudo ss -tlnp | grep -E ':(80|443|8080) '
+LISTEN *:80 users:(("apache2",pid=33704,fd=4),("apache2",pid=33703,fd=4),("apache2",pid=32608,fd=4))
+LISTEN [::ffff:127.0.0.1]:8080 users:(("java",pid=32353,fd=9))
+LISTEN *:443 users:(("apache2",pid=33704,fd=6),("apache2",pid=33703,fd=6),("apache2",pid=32608,fd=6))
+$ sudo ufw status
+Status: active
+
+To                         Action      From
+--                         ------      ----
+OpenSSH                    ALLOW       Anywhere                  
+80/tcp                     ALLOW       Anywhere                  
+443/tcp                    ALLOW       Anywhere                  
+OpenSSH (v6)               ALLOW       Anywhere (v6)             
+80/tcp (v6)                ALLOW       Anywhere (v6)             
+443/tcp (v6)               ALLOW       Anywhere (v6)             
+
+$ systemctl is-active enterprise-risk-api apache2
+active
+active
+$ ps -o user=,cmd= -C java
+riskapi  /usr/bin/java -jar /opt/enterprise-risk-api/app.jar
+$ sudo journalctl -u enterprise-risk-api -n 15 --no-pager
+2026-10-20T02:12:07+00:00 ip-172-31-29-189 java[32353]:  =========|_|==============|___/=/_/_/_/
+2026-10-20T02:12:07+00:00 ip-172-31-29-189 java[32353]:  :: Spring Boot ::                (v3.5.9)
+2026-10-20T02:12:08+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:08.134Z  INFO 32353 --- [           main] c.e.e.SecureWebSystemApplication         : Starting SecureWebSystemApplication v1.0-SNAPSHOT using Java 2
+2026-10-20T02:12:08+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:08.145Z  INFO 32353 --- [           main] c.e.e.SecureWebSystemApplication         : No active profile set, falling back to 1 default profile: "def
+2026-10-20T02:12:10+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:10.650Z  INFO 32353 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-10-20T02:12:10+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:10.674Z  INFO 32353 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-20T02:12:10+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:10.675Z  INFO 32353 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.50]
+2026-10-20T02:12:10+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:10.715Z  INFO 32353 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-10-20T02:12:10+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:10.717Z  INFO 32353 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2454 m
+2026-10-20T02:12:11+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:11.476Z  INFO 32353 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-10-20T02:12:12+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:12.233Z  INFO 32353 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-10-20T02:12:12+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:12.258Z  INFO 32353 --- [           main] c.e.e.SecureWebSystemApplication         : Started SecureWebSystemApplication in 5.072 seconds (process r
+2026-10-20T02:12:12+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:12.696Z  INFO 32353 --- [0.1-8080-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-20T02:12:12+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:12.697Z  INFO 32353 --- [0.1-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-20T02:12:12+00:00 ip-172-31-29-189 java[32353]: 2026-10-20T02:12:12.699Z  INFO 32353 --- [0.1-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms

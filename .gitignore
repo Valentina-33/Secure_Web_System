@@ -37,3 +37,6 @@ dist/
 .env
 .env.local
 *.local
+
+### Evidence with secrets ###
+*NO-SUBIR*
