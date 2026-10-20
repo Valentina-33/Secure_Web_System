@@ -40,3 +40,7 @@ dist/
 
 ### Evidence with secrets ###
 *NO-SUBIR*
+
+### IntelliJ IDEA (local) ###
+.idea/
+*.iml
