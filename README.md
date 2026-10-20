@@ -88,26 +88,89 @@ Then open `http://localhost:5173`, log in and click **Call protected API**.
 
 ## Evidence
 
-What the workshop asks for:
+All the images are in `docs/evidence/`.
 
-| Deliverable | File |
-|---|---|
-| Successful API call while logged in, on the deployed site | [authenticated-api-call.png](docs/evidence/authenticated-api-call.png) |
-| Valid certificate (`openssl` and `certbot` output) | [certificate.png](docs/evidence/certificate.png) and [certificate.txt](docs/evidence/certificate.txt) |
-| Part 7 checks (command output) | [verification.png](docs/evidence/verification.png) and [verification.txt](docs/evidence/verification.txt) |
+### What the workshop asks for
 
-Screenshots of each step, in order:
+**Successful API call while logged in, on the deployed site.** The address bar shows `paula-risk.duckdns.org` and the API answers with `"status": "protected"` and the user's `subject`.
 
-| Screenshots | What they show |
-|---|---|
-| 01 and 02 | The Auth0 login screen and logging in with the test user |
-| 03 and 04 | The local test: logged in and calling the API from `localhost:5173` |
-| 05 and 06 | The Elastic IP linked to the instance and the EC2 instance running |
-| 07, 08 and 09 | The subdomain created in Duck DNS, its IP updated and the `nslookup` check |
-| 10 to 14 | SSH access, installing packages, the `deploy` user and the firewall |
-| 15 | Copying the files to the server with `scp` |
-| 16 | The production URLs saved in Auth0 |
-| 17 | The site running at `https://paula-risk.duckdns.org` |
+![Successful authenticated API call on the deployed site](docs/evidence/authenticated-api-call.png)
+
+**Valid certificate.** Output of `openssl` and `certbot`: the certificate is for `paula-risk.duckdns.org`, it was issued by Let's Encrypt, the check returns `Verify return code: 0 (ok)` and the renewal test passes. The plain text version is in [certificate.txt](docs/evidence/certificate.txt).
+
+![Certificate check output](docs/evidence/certificate.png)
+
+**Part 7 checks.** Output of the commands used for the checklist: 401 without a token, 301 from HTTP to HTTPS, port 8080 closed from the internet, the backend listening only on `127.0.0.1`, the firewall rules, the services running and the service logs. The plain text version is in [verification.txt](docs/evidence/verification.txt).
+
+![Part 7 checks output](docs/evidence/verification.png)
+
+### Part 1: Auth0 setup
+
+The SPA created in Auth0, with its Domain and Client ID. The Client Secret stays hidden and isn't used anywhere.
+
+![Auth0 SPA settings](docs/evidence/00a-auth0-spa-settings.png)
+
+User-Delegated Access from the SPA to the API, with the `read:risk` permission granted.
+
+![User-Delegated Access with read:risk](docs/evidence/00b-auth0-user-delegated-access.png)
+
+### Parts 2 and 3: testing it locally
+
+The Auth0 login screen for the app, and logging in with the test user.
+
+![Auth0 login screen](docs/evidence/01-auth0-login-page.png)
+
+![Logging in with the test user](docs/evidence/02-auth0-login-test-user.png)
+
+Back in the app at `localhost:5173` after logging in, and the API call working locally.
+
+![Logged in locally](docs/evidence/03-local-signed-in.png)
+
+![Authenticated API call locally](docs/evidence/04-local-authenticated-api-call.png)
+
+### Part 4: server and Duck DNS
+
+The Elastic IP `98.82.207.254` linked to the instance, and the EC2 instance running.
+
+![Elastic IP linked to the instance](docs/evidence/05-aws-elastic-ip.png)
+
+![EC2 instance running](docs/evidence/06-aws-ec2-instance.png)
+
+The `paula-risk` subdomain created in Duck DNS, its IP set to the Elastic IP, and `nslookup` showing it resolves to that IP.
+
+![Subdomain added in Duck DNS](docs/evidence/07-duckdns-domain-added.png)
+
+![Duck DNS IP updated](docs/evidence/08-duckdns-ip-updated.png)
+
+![nslookup for the subdomain](docs/evidence/09-nslookup-duckdns.png)
+
+Logging in to the server over SSH and installing the packages.
+
+![SSH into the server](docs/evidence/10-ssh-server.png)
+
+![Installing the packages](docs/evidence/11-apt-install.png)
+
+![Packages installed](docs/evidence/12-apt-install-done.png)
+
+Creating the `deploy` user (not root) and turning on the firewall with only SSH, 80 and 443 allowed.
+
+![deploy user and firewall](docs/evidence/13-deploy-user-and-ufw.png)
+
+![SSH into the server again](docs/evidence/14-ssh-server-again.png)
+
+### Parts 5 and 6: deploying
+
+Copying the frontend build, the backend JAR and the config files to the server with `scp`. This is the first copy. The first frontend build still had the example values from `.env.production.local`, so after fixing them we rebuilt it and copied it again the same way. The old file was removed from the server.
+
+![Copying the files with scp](docs/evidence/15-scp-artifacts.png)
+
+The production URL added to Callback URLs, Logout URLs and Web Origins in Auth0.
+
+![Production URLs in Auth0](docs/evidence/16-auth0-production-urls.png)
+
+The site running at `https://paula-risk.duckdns.org`, before logging in.
+
+![Deployed site before logging in](docs/evidence/17-production-login.png)
 
 ## Checklist
 
